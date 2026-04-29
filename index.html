@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Вибрации">
+<meta name="theme-color" content="#2C2420">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Трекер вибраций</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F5F0E8;
+    --warm-white: #FAF7F2;
+    --sand: #E8DDD0;
+    --terracotta: #C4714A;
+    --terra-light: #D4896A;
+    --terra-pale: #F0D8CC;
+    --olive: #7A8C6E;
+    --olive-light: #9AAD8C;
+    --caramel: #C49A5A;
+    --deep: #2C2420;
+    --mid: #6B5A52;
+    --light-text: #9B8880;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Jost', sans-serif;
+    background: var(--cream);
+    color: var(--deep);
+    min-height: 100vh;
+    padding-bottom: calc(80px + var(--safe-bottom));
+    overscroll-behavior: none;
+  }
+
+  /* Header */
+  .header {
+    background: var(--deep);
+    padding: calc(16px + var(--safe-top)) 24px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(196,113,74,0.15) 0%, transparent 70%);
+  }
+
+  .header-date {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--terra-light);
+    margin-bottom: 8px;
+    font-weight: 300;
+  }
+
+  .header-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 300;
+    color: var(--cream);
+    line-height: 1.2;
+  }
+
+  .header-sub {
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: var(--mid);
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+
+  /* Level bar */
+  .level-bar-section {
+    background: var(--warm-white);
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--sand);
+  }
+
+  .level-label {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--light-text);
+    margin-bottom: 10px;
+  }
+
+  .level-display {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .level-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 40px;
+    font-weight: 300;
+    color: var(--terracotta);
+    line-height: 1;
+    min-width: 56px;
+  }
+
+  .level-info { flex: 1; }
+
+  .level-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    font-weight: 400;
+    color: var(--deep);
+    margin-bottom: 6px;
+  }
+
+  .level-bar-track {
+    height: 3px;
+    background: var(--sand);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .level-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--terracotta), var(--caramel));
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .level-range {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 9px;
+    color: var(--light-text);
+  }
+
+  /* Week strip */
+  .week-strip {
+    display: flex;
+    gap: 6px;
+    padding: 14px 20px;
+    background: var(--warm-white);
+    border-bottom: 1px solid var(--sand);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .week-strip::-webkit-scrollbar { display: none; }
+
+  .week-day { flex-shrink: 0; text-align: center; width: 36px; }
+
+  .week-day-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--light-text);
+    margin-bottom: 5px;
+  }
+
+  .week-day-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--sand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    color: var(--mid);
+    background: var(--cream);
+  }
+
+  .week-day.today .week-day-circle {
+    background: var(--terracotta);
+    border-color: var(--terracotta);
+    color: white;
+  }
+
+  .week-day.has-data:not(.today) .week-day-circle {
+    border-color: var(--olive);
+    color: var(--olive);
+  }
+
+  .week-dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--olive);
+    margin: 4px auto 0;
+    opacity: 0;
+  }
+
+  .week-day.has-data .week-dot { opacity: 1; }
+
+  /* Section */
+  .section { padding: 18px 20px 0; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .section-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  .dot-morning { background: var(--caramel); }
+  .dot-day { background: var(--olive); }
+  .dot-evening { background: var(--terracotta); }
+
+  .section-title {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--light-text);
+    flex: 1;
+  }
+
+  .section-time { font-size: 10px; color: var(--terra-light); font-weight: 300; }
+
+  /* Cards */
+  .card {
+    background: var(--warm-white);
+    border: 1px solid var(--sand);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+
+  .card-part {
+    padding: 15px 16px;
+    border-bottom: 1px solid var(--sand);
+  }
+
+  .card-part:last-child { border-bottom: none; }
+
+  .card-part-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    font-style: italic;
+    color: var(--mid);
+    margin-bottom: 10px;
+  }
+
+  /* Breath */
+  .breath-visual {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+
+  .breath-step {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    background: var(--cream);
+    border-radius: 8px;
+    border: 1px solid var(--sand);
+  }
+
+  .breath-count {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--caramel);
+    display: block;
+  }
+
+  .breath-label { font-size: 8px; letter-spacing: 1px; color: var(--light-text); text-transform: uppercase; }
+  .breath-arrow { color: var(--sand); font-size: 12px; }
+
+  /* Inputs */
+  .field-label { font-size: 9px; color: var(--light-text); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 7px; }
+
+  .text-input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--sand);
+    background: transparent;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-style: italic;
+    color: var(--deep);
+    padding: 4px 0 8px;
+    outline: none;
+    resize: none;
+    -webkit-appearance: none;
+  }
+
+  .text-input::placeholder { color: var(--sand); font-style: italic; }
+
+  /* Anchors */
+  .anchor-item {
+    background: var(--warm-white);
+    border: 1px solid var(--sand);
+    border-radius: 12px;
+    padding: 13px 15px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-user-select: none;
+  }
+
+  .anchor-item.done {
+    background: #F2F7F0;
+    border-color: var(--olive-light);
+  }
+
+  .anchor-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--sand);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+    transition: all 0.2s;
+  }
+
+  .anchor-item.done .anchor-check { background: var(--olive); border-color: var(--olive); }
+
+  .anchor-check-inner {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: white;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .anchor-item.done .anchor-check-inner { opacity: 1; }
+
+  .anchor-title { font-size: 14px; color: var(--deep); margin-bottom: 3px; }
+  .anchor-desc { font-size: 11px; color: var(--light-text); font-weight: 300; line-height: 1.5; }
+
+  .anchor-time-tag {
+    font-size: 9px;
+    color: var(--olive);
+    background: rgba(122,140,110,0.1);
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+
+  /* For me */
+  .for-me-block {
+    background: linear-gradient(135deg, rgba(196,113,74,0.08), rgba(122,140,110,0.08));
+    border: 1px solid var(--terra-pale);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 18px;
+    text-align: center;
+  }
+
+  .for-me-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    font-style: italic;
+    color: var(--mid);
+    margin-bottom: 5px;
+  }
+
+  .for-me-desc { font-size: 11px; color: var(--light-text); line-height: 1.6; }
+
+  .for-me-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 12px;
+    justify-content: center;
+  }
+
+  .for-me-tag {
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--terra-pale);
+    color: var(--terracotta);
+    cursor: pointer;
+    background: white;
+    -webkit-user-select: none;
+    transition: all 0.15s;
+  }
+
+  .for-me-tag.active { background: var(--terracotta); color: white; border-color: var(--terracotta); }
+
+  /* Level selector */
+  .level-selector {
+    background: var(--warm-white);
+    border: 1px solid var(--sand);
+    border-radius: 14px;
+    padding: 15px 16px;
+    margin-bottom: 18px;
+  }
+
+  .level-sel-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--light-text);
+    margin-bottom: 12px;
+  }
+
+  .level-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+
+  .level-opt {
+    padding: 10px 12px;
+    border: 1px solid var(--sand);
+    border-radius: 8px;
+    cursor: pointer;
+    background: var(--cream);
+    transition: all 0.15s;
+    -webkit-user-select: none;
+  }
+
+  .level-opt.active { border-color: var(--terracotta); background: var(--terra-pale); }
+  .level-opt-num { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--terracotta); }
+  .level-opt-name { font-size: 10px; color: var(--mid); margin-top: 2px; }
+
+  /* Save button */
+  .save-btn {
+    width: calc(100% - 40px);
+    margin: 0 20px;
+    padding: 16px;
+    background: var(--deep);
+    color: var(--cream);
+    border: none;
+    border-radius: 14px;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .save-btn:active { background: var(--mid); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: calc(28px + var(--safe-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--deep);
+    color: var(--cream);
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    transition: transform 0.3s ease;
+    z-index: 100;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .hint {
+    font-size: 10px;
+    color: var(--light-text);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-date" id="headerDate"></div>
+  <div class="header-title">Трекер вибраций</div>
+  <div class="header-sub">Нейтральность → Готовность</div>
+</div>
+
+<div class="week-strip" id="weekStrip"></div>
+
+<div class="level-bar-section">
+  <div class="level-label">Текущий уровень дня</div>
+  <div class="level-display">
+    <div class="level-number" id="levelNum">250</div>
+    <div class="level-info">
+      <div class="level-name" id="levelName">Нейтральность</div>
+      <div class="level-bar-track">
+        <div class="level-bar-fill" id="levelFill" style="width:47%"></div>
+      </div>
+      <div class="level-range"><span>20</span><span>1000</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- УТРО -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-dot dot-morning"></div>
+    <div class="section-title">Утро — настройка</div>
+    <div class="section-time">10 мин</div>
+  </div>
+  <div class="card">
+    <div class="card-part">
+      <div class="card-part-title">Дыхание · 3–5 минут</div>
+      <div class="breath-visual">
+        <div class="breath-step"><span class="breath-count">4</span><span class="breath-label">вдох</span></div>
+        <div class="breath-arrow">›</div>
+        <div class="breath-step"><span class="breath-count">4</span><span class="breath-label">задержка</span></div>
+        <div class="breath-arrow">›</div>
+        <div class="breath-step"><span class="breath-count">4</span><span class="breath-label">выдох</span></div>
+      </div>
+      <div class="hint">До телефона. Почувствовать тело, не голову.</div>
+    </div>
+    <div class="card-part">
+      <div class="card-part-title">Намерение · 5 минут</div>
+      <div class="field-label">Каким человеком я хочу быть сегодня?</div>
+      <textarea class="text-input" id="intentionInput" rows="2" placeholder="Сегодня я хочу быть..."></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ДЕНЬ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-dot dot-day"></div>
+    <div class="section-title">День — якоря</div>
+    <div class="section-time">30 сек × 3</div>
+  </div>
+  <div id="anchorsBlock">
+    <div class="anchor-item" id="anchor1" onclick="toggleAnchor('anchor1')">
+      <div class="anchor-check"><div class="anchor-check-inner"></div></div>
+      <div style="flex:1">
+        <div class="anchor-title">Первая пауза</div>
+        <div class="anchor-desc">Что я сейчас чувствую? Где это в теле?</div>
+      </div>
+      <div class="anchor-time-tag">утро</div>
+    </div>
+    <div class="anchor-item" id="anchor2" onclick="toggleAnchor('anchor2')">
+      <div class="anchor-check"><div class="anchor-check-inner"></div></div>
+      <div style="flex:1">
+        <div class="anchor-title">Вторая пауза</div>
+        <div class="anchor-desc">Что я сейчас чувствую? Где это в теле?</div>
+      </div>
+      <div class="anchor-time-tag">день</div>
+    </div>
+    <div class="anchor-item" id="anchor3" onclick="toggleAnchor('anchor3')">
+      <div class="anchor-check"><div class="anchor-check-inner"></div></div>
+      <div style="flex:1">
+        <div class="anchor-title">Третья пауза</div>
+        <div class="anchor-desc">Что я сейчас чувствую? Где это в теле?</div>
+      </div>
+      <div class="anchor-time-tag">вечер</div>
+    </div>
+  </div>
+</div>
+
+<!-- ВЕЧЕР -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-dot dot-evening"></div>
+    <div class="section-title">Вечер — разбор</div>
+    <div class="section-time">15 мин</div>
+  </div>
+  <div class="card">
+    <div class="card-part">
+      <div class="field-label">Что забрало энергию?</div>
+      <textarea class="text-input" id="q1" rows="2" placeholder="Сегодня меня вымотало..."></textarea>
+    </div>
+    <div class="card-part">
+      <div class="field-label">Что дало энергию?</div>
+      <textarea class="text-input" id="q2" rows="2" placeholder="Сегодня меня наполнило..."></textarea>
+    </div>
+    <div class="card-part">
+      <div class="field-label">Момент выше обычного уровня?</div>
+      <textarea class="text-input" id="q3" rows="2" placeholder="Был момент, когда я..."></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ДЛЯ СЕБЯ -->
+<div class="section" style="padding-bottom: 0;">
+  <div class="for-me-block">
+    <div class="for-me-title">Только для меня · 10 минут</div>
+    <div class="for-me-desc">Без пользы. Без задачи. Просто потому что хочется.</div>
+    <div class="for-me-options">
+      <div class="for-me-tag" onclick="toggleTag(this)">Карты</div>
+      <div class="for-me-tag" onclick="toggleTag(this)">Руны</div>
+      <div class="for-me-tag" onclick="toggleTag(this)">Тишина</div>
+      <div class="for-me-tag" onclick="toggleTag(this)">Музыка</div>
+      <div class="for-me-tag" onclick="toggleTag(this)">Прогулка</div>
+      <div class="for-me-tag" onclick="toggleTag(this)">Ванна</div>
+    </div>
+  </div>
+</div>
+
+<!-- УРОВЕНЬ ВЕЧЕРОМ -->
+<div class="section" style="padding-bottom: 0;">
+  <div class="level-selector">
+    <div class="level-sel-title">Оцени уровень к вечеру</div>
+    <div class="level-options">
+      <div class="level-opt" onclick="selectLevel(this,100,'Страх / тревога',18)">
+        <div class="level-opt-num">100</div><div class="level-opt-name">Страх / тревога</div>
+      </div>
+      <div class="level-opt" onclick="selectLevel(this,150,'Гнев / раздражение',27)">
+        <div class="level-opt-num">150</div><div class="level-opt-name">Гнев / раздражение</div>
+      </div>
+      <div class="level-opt active" onclick="selectLevel(this,250,'Нейтральность',47)">
+        <div class="level-opt-num">250</div><div class="level-opt-name">Нейтральность</div>
+      </div>
+      <div class="level-opt" onclick="selectLevel(this,310,'Готовность',57)">
+        <div class="level-opt-num">310</div><div class="level-opt-name">Готовность</div>
+      </div>
+      <div class="level-opt" onclick="selectLevel(this,350,'Принятие',64)">
+        <div class="level-opt-num">350</div><div class="level-opt-name">Принятие</div>
+      </div>
+      <div class="level-opt" onclick="selectLevel(this,500,'Любовь / поток',82)">
+        <div class="level-opt-num">500</div><div class="level-opt-name">Любовь / поток</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="save-btn" onclick="saveDay()">Сохранить день</button>
+
+<div class="toast" id="toast">День сохранён ✦</div>
+
+<script>
+  const DAYS_RU = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+  const MONTHS_RU = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+  let savedData = {};
+  try { savedData = JSON.parse(localStorage.getItem('vibTracker') || '{}'); } catch(e) {}
+
+  let currentLevel = 250, currentLevelPct = 47;
+
+  function getDateKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function initHeader() {
+    const now = new Date();
+    document.getElementById('headerDate').textContent =
+      `${DAYS_RU[now.getDay()]}, ${now.getDate()} ${MONTHS_RU[now.getMonth()]}`;
+  }
+
+  function initWeekStrip() {
+    const strip = document.getElementById('weekStrip');
+    strip.innerHTML = '';
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const key = getDateKey(d);
+      const isToday = i === 0;
+      const data = savedData[key];
+      const div = document.createElement('div');
+      div.className = `week-day${isToday?' today':''}${data&&!isToday?' has-data':''}`;
+      div.innerHTML = `
+        <div class="week-day-label">${DAYS_RU[d.getDay()]}</div>
+        <div class="week-day-circle">${data ? data.level : d.getDate()}</div>
+        <div class="week-dot"></div>`;
+      strip.appendChild(div);
+    }
+  }
+
+  function loadToday() {
+    const data = savedData[getDateKey(new Date())];
+    if (!data) return;
+    if (data.intention) document.getElementById('intentionInput').value = data.intention;
+    if (data.q1) document.getElementById('q1').value = data.q1;
+    if (data.q2) document.getElementById('q2').value = data.q2;
+    if (data.q3) document.getElementById('q3').value = data.q3;
+    if (data.anchors) data.anchors.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('done');
+    });
+    if (data.forMe) data.forMe.forEach(text => {
+      document.querySelectorAll('.for-me-tag').forEach(t => {
+        if (t.textContent === text) t.classList.add('active');
+      });
+    });
+    if (data.level) {
+      document.querySelectorAll('.level-opt').forEach(o => {
+        if (parseInt(o.querySelector('.level-opt-num').textContent) === data.level) {
+          o.click();
+        }
+      });
+    }
+  }
+
+  function toggleAnchor(id) {
+    document.getElementById(id).classList.toggle('done');
+  }
+
+  function toggleTag(el) { el.classList.toggle('active'); }
+
+  function selectLevel(el, num, name, pct) {
+    document.querySelectorAll('.level-opt').forEach(o => o.classList.remove('active'));
+    el.classList.add('active');
+    currentLevel = num; currentLevelPct = pct;
+    document.getElementById('levelNum').textContent = num;
+    document.getElementById('levelName').textContent = name;
+    document.getElementById('levelFill').style.width = pct + '%';
+  }
+
+  function saveDay() {
+    const key = getDateKey(new Date());
+    const anchors = ['anchor1','anchor2','anchor3'].filter(id =>
+      document.getElementById(id).classList.contains('done'));
+    const forMe = [...document.querySelectorAll('.for-me-tag.active')].map(t => t.textContent);
+    savedData[key] = {
+      level: currentLevel,
+      intention: document.getElementById('intentionInput').value,
+      q1: document.getElementById('q1').value,
+      q2: document.getElementById('q2').value,
+      q3: document.getElementById('q3').value,
+      anchors, forMe,
+      savedAt: new Date().toISOString()
+    };
+    try { localStorage.setItem('vibTracker', JSON.stringify(savedData)); } catch(e) {}
+    initWeekStrip();
+    showToast();
+  }
+
+  function showToast() {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // Service Worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+
+  initHeader();
+  initWeekStrip();
+  loadToday();
+</script>
+</body>
+</html>
